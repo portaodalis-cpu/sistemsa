@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f8fb">
+  <meta name="description" content="Plataforma educativa interactiva sobre organizacion biologica e inmunidad para secundaria.">
+  <title>Inmunidad Sistémica | Plataforma Educativa</title>
+  <link rel="stylesheet" href="style.css?v=cn-inmunidad-1">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <button class="icon-button" id="backBtn" type="button" aria-label="Volver">‹</button>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">CN</span>
+        <div class="brand-copy">
+          <h1>Inmunidad Sistémica</h1>
+          <p>Ciencias de la Naturaleza · 2.º de secundaria</p>
+        </div>
+      </div>
+      <button class="icon-button" id="themeBtn" type="button" aria-label="Cambiar tema">◐</button>
+    </header>
+
+    <main id="mainView" class="main-view" tabindex="-1"></main>
+
+    <nav class="tabbar" aria-label="Navegación principal">
+      <button class="tabbar-item is-active" type="button" data-nav="home">
+        <span aria-hidden="true">⌂</span>
+        <small>Inicio</small>
+      </button>
+      <button class="tabbar-item" type="button" data-nav="learn">
+        <span aria-hidden="true">▣</span>
+        <small>Módulos</small>
+      </button>
+      <button class="tabbar-item" type="button" data-nav="progress">
+        <span aria-hidden="true">◎</span>
+        <small>Progreso</small>
+      </button>
+      <button class="tabbar-item" type="button" data-nav="final">
+        <span aria-hidden="true">◆</span>
+        <small>Final</small>
+      </button>
+    </nav>
+  </div>
+
+  <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <script src="script.js?v=cn-inmunidad-1" defer></script>
+</body>
+</html>
