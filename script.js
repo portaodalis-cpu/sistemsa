@@ -114,8 +114,10 @@
         },
         {
           title: "La analogia de las mamushkas tiene limites",
-          visual: "levels",
+          visual: "mamushkas",
           tiles: [
+            ["Mamushkas", "El juego consiste en munecas huecas de distintos tamanos, ordenadas de mayor a menor, que se abren por la mitad."],
+            ["Inclusion", "Cada muneca contiene otra mas pequena en su interior, y la mas pequena ya no contiene ninguna otra."],
             ["Sirve", "Muestra inclusion y organizacion jerarquica."],
             ["No alcanza", "Las munecas son estaticas; los seres vivos son dinamicos."],
             ["Emergencia", "La vida aparece en la celula y no se explica solo sumando moleculas."]
@@ -130,7 +132,8 @@
           points: 3,
           prompt: "Ordena los niveles desde menor a mayor complejidad.",
           items: ["Molecula", "Celula", "Tejido", "Organo", "Sistema de organos", "Organismo"],
-          feedback: "Cada nivel se organiza sobre la base del anterior y agrega nuevas propiedades."
+          start: ["Tejido", "Organismo", "Molecula", "Sistema de organos", "Celula", "Organo"],
+          feedback: "Orden correcto: Molecula, Celula, Tejido, Organo, Sistema de organos y Organismo. La celula es el segundo nivel de esta lista porque antes esta el nivel molecular."
         },
         {
           id: "m2a2",
@@ -293,6 +296,7 @@
           points: 2,
           prompt: "Ordena una respuesta inflamatoria basica.",
           items: ["Entrada del patogeno por una herida", "Celulas danadas liberan senales", "Aumenta el flujo de sangre local", "Llegan fagocitos", "Se eliminan agentes y comienza reparacion"],
+          start: ["Aumenta el flujo de sangre local", "Entrada del patogeno por una herida", "Se eliminan agentes y comienza reparacion", "Celulas danadas liberan senales", "Llegan fagocitos"],
           feedback: "La inflamacion conecta un fenomeno visible con procesos celulares."
         },
         {
@@ -363,6 +367,7 @@
           points: 3,
           prompt: "Ordena una respuesta humoral simplificada.",
           items: ["Ingreso de antigeno", "Reconocimiento por linfocito B", "Activacion y multiplicacion", "Formacion de celulas plasmaticas", "Produccion de anticuerpos", "Formacion de celulas de memoria"],
+          start: ["Produccion de anticuerpos", "Ingreso de antigeno", "Formacion de celulas de memoria", "Reconocimiento por linfocito B", "Formacion de celulas plasmaticas", "Activacion y multiplicacion"],
           feedback: "La memoria inmunologica explica por que una segunda respuesta puede ser mas rapida."
         },
         {
@@ -724,6 +729,11 @@
 
   function isAnswered(activity) {
     var a = answer(activity.id);
+    if (activity.type === "order" && !a) {
+      a = initialOrder(activity);
+      state.answers[activity.id] = a.slice(0);
+      saveState();
+    }
     if (activity.type === "short") {
       return words(a) >= 20 && words(a) <= 150;
     }
@@ -982,6 +992,9 @@
     if (type === "levels") {
       return '<div class="level-stack"><span>Organismo</span><span>Sistema</span><span>Organo</span><span>Tejido</span><span>Celula</span><span>Molecula</span></div>';
     }
+    if (type === "mamushkas") {
+      return '<figure class="mamushka-visual"><img src="assets/mamushkas.svg" alt="Munecas rusas o mamushkas de distintos tamanos"><figcaption>Analogía visual: cada nivel contiene al anterior, pero en biología aparecen propiedades nuevas.</figcaption></figure>';
+    }
     if (type === "cells") {
       return '<div class="cell-field"><span>B</span><span>T</span><span>Ac</span><span>Ag</span></div>';
     }
@@ -989,8 +1002,9 @@
   }
 
   function renderActivity(activity) {
-    var sc = Math.round(scoreActivity(activity));
+    var sc = formatScore(scoreActivity(activity));
     var done = isAnswered(activity);
+    var nextId = getNextActivityId(activity.id);
     var html = '<section class="activity" id="' + activity.id + '"><div class="activity-head"><div><div class="eyebrow">' + esc(activityType(activity.type)) + '</div><h3>' + esc(activity.title) + '</h3><p>' + esc(activity.prompt) + '</p></div><span class="badge ' + (done ? "ok" : "warn") + '">' + sc + '/' + activity.points + '</span></div>';
     if (activity.type === "choice") html += renderChoice(activity);
     if (activity.type === "multi") html += renderMulti(activity);
@@ -1000,7 +1014,11 @@
     if (activity.type === "fill") html += renderFill(activity);
     if (activity.type === "short") html += renderShort(activity);
     if (activity.type === "truefalse") html += renderTrueFalse(activity);
-    html += '<div class="row-actions" style="margin-top:10px"><button class="button secondary" type="button" data-check="' + activity.id + '">Verificar</button></div>';
+    html += '<div class="row-actions activity-actions"><button class="button verify" type="button" data-check="' + activity.id + '">Verificar</button>';
+    if (nextId) {
+      html += '<button class="button secondary next-action" type="button" data-next-activity="' + nextId + '">Siguiente actividad</button>';
+    }
+    html += '</div>';
     html += '<div class="feedback ' + (state.feedback[activity.id] ? "is-visible " + feedbackClass(activity) : "") + '">' + feedbackText(activity) + '</div></section>';
     return html;
   }
@@ -1071,10 +1089,14 @@
 
   function renderOrder(activity) {
     var a = answer(activity.id);
-    if (!a) a = activity.items.slice(0);
+    if (!a) {
+      a = initialOrder(activity);
+      state.answers[activity.id] = a.slice(0);
+      saveState();
+    }
     var html = '<div class="option-grid">';
     for (var i = 0; i < a.length; i++) {
-      html += '<div class="order-item"><strong>' + (i + 1) + '. ' + esc(a[i]) + '</strong><div class="order-controls"><button class="tiny" type="button" data-order="' + activity.id + '" data-index="' + i + '" data-dir="-1">Subir</button><button class="tiny" type="button" data-order="' + activity.id + '" data-index="' + i + '" data-dir="1">Bajar</button></div></div>';
+      html += '<div class="order-item"><strong>' + (i + 1) + '. ' + esc(a[i]) + '</strong><div class="order-controls"><button class="tiny move" type="button" data-order="' + activity.id + '" data-index="' + i + '" data-dir="-1">↑ Subir</button><button class="tiny move" type="button" data-order="' + activity.id + '" data-index="' + i + '" data-dir="1">↓ Bajar</button></div></div>';
     }
     html += '</div>';
     return html;
@@ -1110,15 +1132,67 @@
   }
 
   function feedbackClass(activity) {
+    if (activity.type === "order") {
+      return scoreActivity(activity) >= activity.points ? "ok" : "warn";
+    }
     return scoreActivity(activity) >= activity.points * 0.65 ? "ok" : "warn";
   }
 
   function feedbackText(activity) {
     if (!state.feedback[activity.id]) return "";
-    if (!isAnswered(activity)) return "Aun falta completar la actividad. Las respuestas abiertas requieren entre 20 y 150 palabras.";
+    if (!isAnswered(activity)) {
+      if (activity.type === "short" || activity.type === "truefalse") {
+        return "Aun falta completar la actividad. Las respuestas abiertas requieren entre 20 y 150 palabras.";
+      }
+      if (activity.type === "order") {
+        return "Aun falta ordenar todos los elementos de la secuencia.";
+      }
+      return "Aun falta completar la actividad.";
+    }
     var sc = Math.round(scoreActivity(activity));
+    if (activity.type === "order") {
+      if (scoreActivity(activity) >= activity.points) {
+        return esc("Correcto. " + (activity.feedback || "La secuencia esta organizada correctamente."));
+      }
+      return esc("Orden parcial: hay elementos fuera de lugar. " + (activity.feedback || "Revisa la secuencia antes de continuar."));
+    }
     var base = sc >= activity.points * 0.65 ? "Buen avance. " : "Revisa la retroalimentacion y mejora tu respuesta. ";
     return esc(base + (activity.feedback || "La plataforma asigna puntaje parcial segun exactitud, coherencia y relacion tematica."));
+  }
+
+  function formatScore(value) {
+    var rounded = Math.round(value);
+    if (Math.abs(value - rounded) < 0.01) {
+      return String(rounded);
+    }
+    return String(Math.round(value * 10) / 10);
+  }
+
+  function getNextActivityId(id) {
+    var acts = allActivities();
+    for (var i = 0; i < acts.length - 1; i++) {
+      if (acts[i].id === id) return acts[i + 1].id;
+    }
+    return "";
+  }
+
+  function goToActivity(id) {
+    for (var i = 0; i < modules.length; i++) {
+      for (var j = 0; j < modules[i].activities.length; j++) {
+        if (modules[i].activities[j].id === id) {
+          currentModule = i;
+          currentView = "module";
+          render();
+          setTimeout(function () {
+            var target = document.getElementById(id);
+            if (target && target.scrollIntoView) {
+              target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }, 0);
+          return;
+        }
+      }
+    }
   }
 
   function renderProgress() {
@@ -1247,7 +1321,7 @@
     bindButtons("[data-order]", function (el) {
       var id = el.getAttribute("data-order");
       var act = findActivity(id);
-      var a = state.answers[id] || act.items.slice(0);
+      var a = state.answers[id] || initialOrder(act);
       var ix = parseInt(el.getAttribute("data-index"), 10);
       var dir = parseInt(el.getAttribute("data-dir"), 10);
       var ni = ix + dir;
@@ -1301,6 +1375,23 @@
         render();
       };
     }
+    var nexts = document.querySelectorAll("[data-next-activity]");
+    for (i = 0; i < nexts.length; i++) {
+      nexts[i].onclick = function () {
+        goToActivity(this.getAttribute("data-next-activity"));
+      };
+    }
+  }
+
+  function initialOrder(activity) {
+    if (activity.start && activity.start.length === activity.items.length) {
+      return activity.start.slice(0);
+    }
+    var copy = activity.items.slice(0);
+    if (copy.length > 3) {
+      return copy.slice(1).reverse().concat(copy[0]);
+    }
+    return copy.reverse();
   }
 
   function bindButtons(selector, handler) {
